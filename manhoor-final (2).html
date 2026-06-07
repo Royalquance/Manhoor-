@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Manhoor Facturas</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Roboto', sans-serif; background: #f0ebf8; min-height: 100vh; }
+
+.topbar { background: #673ab7; height: 6px; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+.topbar-inner { height: 100%; background: #b39ddb; transition: width 0.4s; }
+
+.header-card {
+  background: white; border-top: 8px solid #673ab7;
+  border-radius: 8px; padding: 24px; margin: 22px 16px 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  margin-top: calc(22px + env(safe-area-inset-top, 0px));
+}
+.header-title { font-family: 'Google Sans', sans-serif; font-size: 1.5rem; font-weight: 700; color: #202124; margin-bottom: 4px; }
+.header-sub { font-size: 0.85rem; color: #5f6368; }
+
+.step-card {
+  background: white; border-radius: 8px; padding: 24px;
+  margin: 0 16px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  display: none; animation: fadeUp 0.25s ease;
+}
+.step-card.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+.step-q { font-family: 'Google Sans', sans-serif; font-size: 1rem; font-weight: 500; color: #202124; margin-bottom: 4px; }
+.step-hint { font-size: 0.8rem; color: #5f6368; margin-bottom: 18px; }
+.req { color: #d93025; }
+
+.worker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.w-opt {
+  border: 2px solid #e8eaed; border-radius: 8px; padding: 14px 8px;
+  text-align: center; cursor: pointer; background: #fafafa; transition: all 0.15s;
+}
+.w-opt:hover { border-color: #673ab7; background: #f3e8ff; }
+.w-opt.sel { border-color: #673ab7; background: #ede7f6; }
+.w-emoji { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+.w-name { font-size: 0.82rem; font-weight: 500; color: #202124; }
+
+.form-input {
+  width: 100%; border: none; border-bottom: 2px solid #dadce0;
+  padding: 8px 0; font-size: 1rem; color: #202124; background: transparent;
+  outline: none; transition: border-color 0.2s; font-family: 'Roboto', sans-serif;
+}
+.form-input:focus { border-bottom-color: #673ab7; }
+.form-input::placeholder { color: #bdc1c6; }
+.form-input.big { font-size: 2rem; font-weight: 700; color: #673ab7; text-align: center; }
+
+.radio-opt {
+  display: flex; align-items: center; gap: 14px; padding: 12px 14px;
+  border-radius: 8px; cursor: pointer; border: 1.5px solid #e8eaed;
+  margin-bottom: 8px; transition: all 0.15s;
+}
+.radio-opt:hover { background: #f3e8ff; border-color: #673ab7; }
+.radio-opt.sel { background: #ede7f6; border-color: #673ab7; }
+.r-circle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #dadce0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.radio-opt.sel .r-circle { border-color: #673ab7; background: #673ab7; }
+.r-dot { width: 8px; height: 8px; border-radius: 50%; background: white; display: none; }
+.radio-opt.sel .r-dot { display: block; }
+.r-label { font-size: 0.95rem; color: #202124; }
+
+.nav-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 20px; }
+.btn-next {
+  background: #673ab7; color: white; border: none; border-radius: 4px;
+  padding: 12px 28px; font-family: 'Google Sans', sans-serif; font-weight: 500;
+  font-size: 0.95rem; cursor: pointer; transition: all 0.15s;
+}
+.btn-next:hover { background: #5e35b1; }
+.btn-next:active { transform: scale(0.98); }
+.btn-back { background: none; border: none; color: #673ab7; font-family: 'Google Sans', sans-serif; font-weight: 500; font-size: 0.9rem; cursor: pointer; padding: 8px 12px; border-radius: 4px; }
+.btn-back:hover { background: #f3e8ff; }
+
+.success-card {
+  background: white; border-radius: 8px; padding: 32px 24px;
+  margin: 0 16px 12px; text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12); display: none;
+}
+.success-card.active { display: block; animation: fadeUp 0.3s ease; }
+.s-icon { font-size: 3.5rem; margin-bottom: 12px; }
+.s-title { font-family: 'Google Sans', sans-serif; font-size: 1.3rem; font-weight: 700; color: #202124; margin-bottom: 6px; }
+.s-sub { font-size: 0.875rem; color: #5f6368; margin-bottom: 22px; }
+.s-fact { background: #f8f9fa; border-radius: 8px; padding: 14px 16px; text-align: left; margin-bottom: 20px; }
+.sf-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #e8eaed; font-size: 0.875rem; }
+.sf-row:last-child { border-bottom: none; }
+.sf-lbl { color: #5f6368; }
+.sf-val { font-weight: 500; color: #202124; }
+.sf-total { font-size: 1.1rem; font-weight: 700; color: #673ab7; }
+.btn-another { background: #673ab7; color: white; border: none; border-radius: 4px; padding: 13px; font-family: 'Google Sans', sans-serif; font-weight: 500; font-size: 0.95rem; cursor: pointer; width: 100%; margin-bottom: 10px; }
+
+/* PIN */
+.pin-screen {
+  position: fixed; inset: 0; background: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 500; padding: 30px;
+}
+.pin-screen.hidden { display: none; }
+.pin-lock-icon { font-size: 3rem; margin-bottom: 16px; }
+.pin-title { font-family: 'Google Sans', sans-serif; font-size: 1.3rem; font-weight: 700; color: #202124; margin-bottom: 6px; }
+.pin-sub { font-size: 0.85rem; color: #5f6368; margin-bottom: 32px; text-align: center; }
+.pin-dots { display: flex; gap: 16px; margin-bottom: 32px; }
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #673ab7; background: white; transition: background 0.15s; }
+.pin-dot.filled { background: #673ab7; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 280px; width: 100%; }
+.key {
+  aspect-ratio: 1; border-radius: 50%; border: none;
+  background: #f8f9fa; font-family: 'Google Sans', sans-serif;
+  font-size: 1.4rem; font-weight: 500; color: #202124;
+  cursor: pointer; transition: all 0.15s; display: flex;
+  align-items: center; justify-content: center;
+}
+.key:hover { background: #ede7f6; }
+.key:active { background: #d1c4e9; transform: scale(0.94); }
+.key.del { background: none; font-size: 1.2rem; color: #5f6368; }
+.key.del:hover { background: #fce8e6; color: #d93025; }
+.key.empty { pointer-events: none; background: none; }
+.pin-error { color: #d93025; font-size: 0.82rem; margin-top: -20px; margin-bottom: 20px; min-height: 20px; }
+
+/* BOSS */
+.boss-screen { display: none; }
+.boss-screen.active { display: block; }
+.boss-hdr {
+  background: #673ab7; color: white; padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 90;
+}
+.boss-title { font-family: 'Google Sans', sans-serif; font-weight: 700; font-size: 1.1rem; }
+.boss-lock-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 7px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+
+.totals-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 16px 6px; }
+.tot-box { background: white; border-radius: 8px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+.tot-lbl { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: #5f6368; margin-bottom: 4px; }
+.tot-val { font-family: 'Google Sans', sans-serif; font-weight: 800; font-size: 1.3rem; }
+.tot-val.p { color: #673ab7; }
+.tot-val.g { color: #1e8e3e; }
+.tot-val.b { color: #1a73e8; }
+.tot-val.r { color: #d93025; }
+
+.boss-date-row { padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+.boss-date-input { padding: 8px 12px; border: 1.5px solid #e8eaed; border-radius: 6px; font-size: 0.88rem; color: #202124; flex: 1; }
+.export-btn { padding: 8px 14px; border-radius: 6px; border: 1.5px solid #673ab7; background: white; color: #673ab7; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
+.refresh-btn { padding: 8px 14px; border-radius: 6px; border: 1.5px solid #1e8e3e; background: white; color: #1e8e3e; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
+
+.w-block { background: white; border-radius: 8px; margin: 6px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+.w-block-hdr { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #faf7ff; border-bottom: 1px solid #ede7f6; }
+.w-av { width: 38px; height: 38px; border-radius: 50%; background: #673ab7; color: white; display: flex; align-items: center; justify-content: center; font-family: 'Google Sans', sans-serif; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+.w-bname { font-family: 'Google Sans', sans-serif; font-weight: 600; font-size: 0.95rem; flex: 1; }
+.w-btotal { font-family: 'Google Sans', sans-serif; font-weight: 800; font-size: 1.05rem; color: #673ab7; }
+.f-row-boss { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid #f8f9fa; font-size: 0.85rem; }
+.f-row-boss:last-child { border-bottom: none; }
+.f-prov-boss { flex: 1; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pago-chip { font-size: 0.65rem; padding: 3px 8px; border-radius: 10px; white-space: nowrap; }
+.pago-chip.efectivo { background: #fef9e7; color: #856404; }
+.pago-chip.banco    { background: #e8f4fd; color: #1a73e8; }
+.pago-chip.pendiente{ background: #fce8e6; color: #d93025; }
+.f-amt-boss { font-weight: 700; color: #202124; white-space: nowrap; }
+.f-hora { font-size: 0.65rem; color: #aaa; white-space: nowrap; }
+
+.boss-empty { text-align: center; padding: 40px 20px; color: #5f6368; font-size: 0.875rem; }
+.boss-pb { padding-bottom: 24px; }
+
+/* LOADING */
+.loading-box { text-align: center; padding: 30px; color: #673ab7; font-size: 0.85rem; }
+.spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid #e8eaed; border-top-color: #673ab7; border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* BOTTOM NAV */
+.bot-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e8eaed; display: flex; z-index: 80; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.bn-btn { flex: 1; padding: 10px 4px; background: none; border: none; font-size: 0.58rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: #5f6368; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.bn-btn .bn-icon { font-size: 1.2rem; }
+.bn-btn.active { color: #673ab7; }
+
+/* TEAM */
+.team-view { display: none; padding-bottom: 70px; }
+.team-view.active { display: block; }
+.team-add-card { background: white; border-radius: 8px; padding: 22px 24px; margin: 16px 16px 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.team-add-row { display: flex; gap: 10px; margin-top: 14px; }
+.team-input { flex: 1; border: none; border-bottom: 2px solid #dadce0; padding: 8px 0; font-size: 0.95rem; font-family: 'Roboto', sans-serif; outline: none; transition: border-color 0.2s; }
+.team-input:focus { border-bottom-color: #673ab7; }
+.team-add-btn { background: #673ab7; color: white; border: none; border-radius: 4px; padding: 8px 18px; font-family: 'Google Sans', sans-serif; font-weight: 500; font-size: 0.88rem; cursor: pointer; }
+.team-card { background: white; border-radius: 8px; margin: 0 16px 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
+.tm-row { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid #f1f3f4; }
+.tm-row:last-child { border-bottom: none; }
+.tm-av { width: 34px; height: 34px; border-radius: 50%; background: #ede7f6; color: #673ab7; display: flex; align-items: center; justify-content: center; font-family: 'Google Sans', sans-serif; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+.tm-name { flex: 1; font-size: 0.92rem; font-weight: 500; }
+.tm-del { background: none; border: none; color: #bdc1c6; cursor: pointer; font-size: 1rem; }
+.tm-del:hover { color: #d93025; }
+.boss-access-btn { margin: 6px 16px 0; background: none; border: 1.5px solid #673ab7; color: #673ab7; border-radius: 8px; padding: 12px; font-family: 'Google Sans', sans-serif; font-weight: 600; font-size: 0.9rem; cursor: pointer; width: calc(100% - 32px); }
+.boss-access-btn:hover { background: #f3e8ff; }
+
+.toast { position: fixed; bottom: calc(70px + env(safe-area-inset-bottom, 0px) + 8px); left: 50%; transform: translateX(-50%) translateY(60px); background: #323232; color: white; padding: 10px 20px; border-radius: 4px; font-size: 0.85rem; z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.pb70 { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+</style>
+</head>
+<body>
+
+<!-- WORKER VIEW -->
+<div id="workerView">
+  <div class="topbar"><div class="topbar-inner" id="progressBar" style="width:0%"></div></div>
+
+  <div id="formArea" class="pb70">
+    <div class="header-card">
+      <div class="header-title">📋 Nueva Factura</div>
+      <div class="header-sub">Solo 4 preguntas rápidas</div>
+    </div>
+
+    <div class="step-card active" id="step1">
+      <div class="step-q">¿Quién eres tú? <span class="req">*</span></div>
+      <div class="step-hint">Toca tu nombre</div>
+      <div class="worker-grid" id="workerGrid"></div>
+    </div>
+
+    <div class="step-card" id="step2">
+      <div class="step-q">¿De qué proveedor? <span class="req">*</span></div>
+      <div class="step-hint">Escribe el nombre del proveedor</div>
+      <input type="text" class="form-input" id="fProv" placeholder="Ej: Fruits Perals, Bonet..." autocomplete="off">
+    </div>
+
+    <div class="step-card" id="step3">
+      <div class="step-q">¿Cuánto es el total? <span class="req">*</span></div>
+      <div class="step-hint">Total con IVA incluido</div>
+      <input type="text" inputmode="decimal" class="form-input big" id="fTotal" placeholder="0.00" autocomplete="off">
+      <div style="text-align:center;font-size:0.8rem;color:#5f6368;margin-top:8px;">euros €</div>
+    </div>
+
+    <div class="step-card" id="step4">
+      <div class="step-q">¿Cómo se ha pagado? <span class="req">*</span></div>
+      <div class="step-hint">Selecciona una opción</div>
+      <div class="radio-opt" onclick="selPago('efectivo',this)">
+        <div class="r-circle"><div class="r-dot"></div></div>
+        <span>💵</span><span class="r-label">Efectivo</span>
+      </div>
+      <div class="radio-opt" onclick="selPago('banco',this)">
+        <div class="r-circle"><div class="r-dot"></div></div>
+        <span>🏦</span><span class="r-label">Banco / Transferencia</span>
+      </div>
+      <div class="radio-opt" onclick="selPago('pendiente',this)">
+        <div class="r-circle"><div class="r-dot"></div></div>
+        <span>⏳</span><span class="r-label">Pendiente de pago</span>
+      </div>
+    </div>
+
+    <div class="nav-row" id="navRow">
+      <button class="btn-back" id="btnBack" onclick="prevStep()" style="visibility:hidden">← Atrás</button>
+      <button class="btn-next" id="btnNext" onclick="nextStep()">Siguiente →</button>
+    </div>
+
+    <div class="success-card" id="successCard">
+      <div class="s-icon">✅</div>
+      <div class="s-title">¡Factura guardada!</div>
+      <div class="s-sub">Guardado en Google Sheets ✓</div>
+      <div class="s-fact" id="successDetail"></div>
+      <button class="btn-another" onclick="resetForm()">➕ Añadir otra factura</button>
+    </div>
+  </div>
+
+  <!-- TEAM TAB -->
+  <div class="team-view" id="teamView">
+    <div class="team-add-card">
+      <div class="step-q" style="margin-bottom:4px;">👥 Equipo de trabajo</div>
+      <div class="step-hint">Añade los nombres de los trabajadores</div>
+      <div class="team-add-row">
+        <input type="text" class="team-input" id="wInput" placeholder="Nombre del trabajador..." maxlength="20">
+        <button class="team-add-btn" onclick="addWorker()">Añadir</button>
+      </div>
+    </div>
+    <div class="team-card" id="teamList"></div>
+    <button class="boss-access-btn" onclick="showPin()">🔐 Acceso Jefe</button>
+  </div>
+
+  <div class="bot-nav">
+    <button class="bn-btn active" id="bn-form" onclick="switchTab('form',this)"><span class="bn-icon">📋</span>Añadir</button>
+    <button class="bn-btn" id="bn-team" onclick="switchTab('team',this)"><span class="bn-icon">👥</span>Equipo</button>
+  </div>
+</div>
+
+<!-- PIN SCREEN -->
+<div class="pin-screen hidden" id="pinScreen">
+  <div class="pin-lock-icon">🔐</div>
+  <div class="pin-title">Acceso Jefe</div>
+  <div class="pin-sub">Introduce el PIN para ver<br>los totales y el resumen</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+  <div class="keypad">
+    <button class="key" onclick="pinKey('1')">1</button>
+    <button class="key" onclick="pinKey('2')">2</button>
+    <button class="key" onclick="pinKey('3')">3</button>
+    <button class="key" onclick="pinKey('4')">4</button>
+    <button class="key" onclick="pinKey('5')">5</button>
+    <button class="key" onclick="pinKey('6')">6</button>
+    <button class="key" onclick="pinKey('7')">7</button>
+    <button class="key" onclick="pinKey('8')">8</button>
+    <button class="key" onclick="pinKey('9')">9</button>
+    <button class="key empty"></button>
+    <button class="key" onclick="pinKey('0')">0</button>
+    <button class="key del" onclick="pinDel()">⌫</button>
+  </div>
+  <button style="margin-top:24px;background:none;border:none;color:#5f6368;font-size:0.85rem;cursor:pointer;" onclick="hidePin()">Cancelar</button>
+</div>
+
+<!-- BOSS DASHBOARD -->
+<div class="boss-screen" id="bossScreen">
+  <div class="boss-hdr">
+    <div>
+      <div class="boss-title">📊 Panel Jefe</div>
+      <div style="font-size:0.65rem;opacity:0.75;">Solo tú puedes ver esto</div>
+    </div>
+    <button class="boss-lock-btn" onclick="lockBoss()">🔒 Salir</button>
+  </div>
+
+  <div class="boss-date-row">
+    <input type="date" class="boss-date-input" id="bossDate" onchange="renderBoss()">
+    <button class="refresh-btn" onclick="loadFromSheets()">🔄</button>
+    <button class="export-btn" onclick="exportTxt()">📄</button>
+  </div>
+
+  <div class="totals-row">
+    <div class="tot-box"><div class="tot-lbl">TOTAL DÍA</div><div class="tot-val p" id="bTotal">0,00 €</div></div>
+    <div class="tot-box"><div class="tot-lbl">💵 Efectivo</div><div class="tot-val g" id="bEf">0,00 €</div></div>
+    <div class="tot-box"><div class="tot-lbl">🏦 Banco</div><div class="tot-val b" id="bBa">0,00 €</div></div>
+    <div class="tot-box"><div class="tot-lbl">⏳ Pendiente</div><div class="tot-val r" id="bPe">0,00 €</div></div>
+  </div>
+
+  <div class="boss-pb" id="bossContainer"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Safe localStorage wrapper (fails in incognito/private mode on some mobile browsers)
+const store = {
+  _mem: {},
+  get(k) {
+    try { return localStorage.getItem(k); } catch(e) { return this._mem[k] ?? null; }
+  },
+  set(k, v) {
+    try { localStorage.setItem(k, v); } catch(e) { this._mem[k] = v; }
+  }
+};
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxaOfy5rK8KQ9pV9S2rcZmdu4kjEkNuC5Gdkb6XKdPZ4LAEUAyEkKWqg0BAbYcr0j84EQ/exec';
+const BOSS_PIN   = '0000';
+
+let workers  = JSON.parse(store.get('mh5_workers') || '[]');
+let sheetsData = [];
+
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('bossDate').value = today;
+
+let step = 1;
+let sel  = { wId: null, wName: '', prov: '', total: 0, pago: '' };
+let pinVal = '';
+
+function saveWorkers() { store.set('mh5_workers', JSON.stringify(workers)); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function fmt(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; }
+function initials(n) { return n.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2); }
+
+// ── TABS ──
+function switchTab(tab, btn) {
+  document.querySelectorAll('.bn-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (tab === 'form') {
+    document.getElementById('formArea').style.display = '';
+    document.getElementById('teamView').classList.remove('active');
+  } else {
+    document.getElementById('formArea').style.display = 'none';
+    document.getElementById('teamView').classList.add('active');
+    renderTeam();
+  }
+}
+
+// ── PIN ──
+function showPin() {
+  pinVal = ''; updatePinDots();
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinScreen').classList.remove('hidden');
+}
+function hidePin() {
+  document.getElementById('pinScreen').classList.add('hidden');
+  pinVal = ''; updatePinDots();
+}
+function pinKey(k) {
+  if (pinVal.length >= 4) return;
+  pinVal += k; updatePinDots();
+  if (pinVal.length === 4) setTimeout(checkPin, 150);
+}
+function pinDel() {
+  pinVal = pinVal.slice(0,-1); updatePinDots();
+  document.getElementById('pinError').textContent = '';
+}
+function updatePinDots() {
+  for (let i=0;i<4;i++) document.getElementById('d'+i).classList.toggle('filled', i < pinVal.length);
+}
+function checkPin() {
+  if (pinVal === BOSS_PIN) { hidePin(); openBoss(); }
+  else {
+    document.getElementById('pinError').textContent = '❌ PIN incorrecto';
+    pinVal = ''; updatePinDots();
+  }
+}
+
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = '@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}';
+document.head.appendChild(shakeStyle);
+
+// ── BOSS ──
+function openBoss() {
+  document.getElementById('workerView').style.display = 'none';
+  document.getElementById('bossScreen').classList.add('active');
+  loadFromSheets();
+}
+function lockBoss() {
+  document.getElementById('bossScreen').classList.remove('active');
+  document.getElementById('workerView').style.display = '';
+}
+
+async function loadFromSheets() {
+  document.getElementById('bossContainer').innerHTML = `
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <div>Cargando desde Google Sheets...</div>
+    </div>`;
+  try {
+    const res  = await fetch(SCRIPT_URL);
+    const raw  = await res.json();
+    // Skip header row if present
+    sheetsData = raw.slice(1).filter(r => r[0] || r[1]).map(r => ({
+      timestamp: r[0],
+      fecha:     r[1] ? String(r[1]).slice(0,10) : today,
+      hora:      r[2] || '',
+      worker:    r[3] || '',
+      proveedor: r[4] || '',
+      total:     parseFloat(r[5]) || 0,
+      pago:      r[6] || 'efectivo'
+    }));
+    renderBoss();
+    toast('✅ Datos actualizados');
+  } catch(err) {
+    document.getElementById('bossContainer').innerHTML = `<div class="boss-empty">⚠️ Error al cargar. Comprueba conexión.</div>`;
+    toast('⚠️ Error de conexión');
+  }
+}
+
+function renderBoss() {
+  const fecha = document.getElementById('bossDate').value;
+  const data  = sheetsData.filter(f => f.fecha === fecha);
+
+  const tot = data.reduce((s,f)=>s+f.total,0);
+  const ef  = data.filter(f=>f.pago==='efectivo').reduce((s,f)=>s+f.total,0);
+  const ba  = data.filter(f=>f.pago==='banco').reduce((s,f)=>s+f.total,0);
+  const pe  = data.filter(f=>f.pago==='pendiente').reduce((s,f)=>s+f.total,0);
+
+  document.getElementById('bTotal').textContent = fmt(tot);
+  document.getElementById('bEf').textContent    = fmt(ef);
+  document.getElementById('bBa').textContent    = fmt(ba);
+  document.getElementById('bPe').textContent    = fmt(pe);
+
+  const cont = document.getElementById('bossContainer');
+  if (!data.length) {
+    cont.innerHTML = '<div class="boss-empty">📭 Sin facturas para esta fecha.</div>';
+    return;
+  }
+
+  const groups = {};
+  data.forEach(f => {
+    const k = f.worker || 'Sin nombre';
+    if (!groups[k]) groups[k] = { name: k, items: [] };
+    groups[k].items.push(f);
+  });
+
+  cont.innerHTML = Object.values(groups).map(g => {
+    const gt = g.items.reduce((s,f)=>s+f.total,0);
+    return `
+      <div class="w-block">
+        <div class="w-block-hdr">
+          <div class="w-av">${initials(g.name)}</div>
+          <div class="w-bname">${g.name}</div>
+          <div class="w-btotal">${fmt(gt)}</div>
+        </div>
+        ${g.items.map(f=>`
+          <div class="f-row-boss">
+            <span class="f-prov-boss">${f.proveedor}</span>
+            <span class="pago-chip ${f.pago}">${f.pago==='efectivo'?'💵':f.pago==='banco'?'🏦':'⏳'} ${f.pago}</span>
+            <span class="f-hora">${f.hora}</span>
+            <span class="f-amt-boss">${fmt(f.total)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('') + '<div style="height:24px;"></div>';
+}
+
+function exportTxt() {
+  const fecha = document.getElementById('bossDate').value;
+  const data  = sheetsData.filter(f => f.fecha === fecha);
+  if (!data.length) { toast('Sin datos'); return; }
+  const tot = data.reduce((s,f)=>s+f.total,0);
+  const ef  = data.filter(f=>f.pago==='efectivo').reduce((s,f)=>s+f.total,0);
+  const ba  = data.filter(f=>f.pago==='banco').reduce((s,f)=>s+f.total,0);
+  let txt = `MANHOOR — ${fecha}\n${'─'.repeat(48)}\n`;
+  data.forEach(f => txt += `${f.worker.padEnd(13)} ${f.proveedor.padEnd(22)} ${f.total.toFixed(2).padStart(8)} € [${f.pago}]\n`);
+  txt += `${'─'.repeat(48)}\nTOTAL: ${tot.toFixed(2)} €  💵 ${ef.toFixed(2)} €  🏦 ${ba.toFixed(2)} €\n`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download = `manhoor_${fecha}.txt`; a.click();
+  toast('📄 Descargado');
+}
+
+// ── FORM ──
+function updateProgress() {
+  document.getElementById('progressBar').style.width = ((step-1)/4*100)+'%';
+  document.getElementById('btnBack').style.visibility = step>1 ? 'visible' : 'hidden';
+  document.getElementById('btnNext').textContent = step===4 ? '✓ Enviar' : 'Siguiente →';
+}
+
+function showStep(n) {
+  document.querySelectorAll('.step-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('successCard').classList.remove('active');
+  document.getElementById('navRow').style.display = 'flex';
+  const card = document.getElementById('step'+n);
+  if (card) card.classList.add('active');
+  updateProgress();
+}
+
+function nextStep() {
+  if (step===1 && !sel.wId)                        { toast('⚠️ Toca tu nombre'); return; }
+  if (step===2) {
+    sel.prov = document.getElementById('fProv').value.trim();
+    if (!sel.prov)                                  { toast('⚠️ Escribe el proveedor'); return; }
+  }
+  if (step===3) {
+    const rawVal = document.getElementById('fTotal').value.replace(',', '.');
+    sel.total = parseFloat(rawVal);
+    if (isNaN(sel.total)||sel.total<=0)             { toast('⚠️ Escribe el total'); return; }
+  }
+  if (step===4) {
+    if (!sel.pago)                                  { toast('⚠️ Selecciona forma de pago'); return; }
+    submitForm(); return;
+  }
+  step++; showStep(step);
+}
+
+function prevStep() { if (step<=1) return; step--; showStep(step); }
+
+function selPago(pago, el) {
+  sel.pago = pago;
+  document.querySelectorAll('.radio-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+async function submitForm() {
+  document.getElementById('btnNext').textContent = '⏳ Guardando...';
+  document.getElementById('btnNext').disabled = true;
+
+  const hora = new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  const payload = {
+    fecha: today, hora, worker: sel.wName,
+    proveedor: sel.prov, total: sel.total, pago: sel.pago
+  };
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    document.querySelectorAll('.step-card').forEach(c=>c.classList.remove('active'));
+    document.getElementById('navRow').style.display = 'none';
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('successDetail').innerHTML = `
+      <div class="sf-row"><span class="sf-lbl">Trabajador</span><span class="sf-val">👤 ${sel.wName}</span></div>
+      <div class="sf-row"><span class="sf-lbl">Proveedor</span><span class="sf-val">${sel.prov}</span></div>
+      <div class="sf-row"><span class="sf-lbl">Pago</span><span class="sf-val">${sel.pago==='efectivo'?'💵 Efectivo':sel.pago==='banco'?'🏦 Banco':'⏳ Pendiente'}</span></div>
+      <div class="sf-row"><span class="sf-lbl">Total</span><span class="sf-val sf-total">${fmt(sel.total)}</span></div>
+    `;
+    document.getElementById('successCard').classList.add('active');
+    toast('✅ Guardado en Google Sheets');
+  } catch(err) {
+    toast('⚠️ Error al guardar. Reintenta.');
+    document.getElementById('btnNext').textContent = '✓ Enviar';
+    document.getElementById('btnNext').disabled = false;
+  }
+}
+
+function resetForm() {
+  step = 1; sel = {wId:null,wName:'',prov:'',total:0,pago:''};
+  document.getElementById('fProv').value = '';
+  document.getElementById('fTotal').value = '';
+  document.querySelectorAll('.w-opt').forEach(e=>e.classList.remove('sel'));
+  document.querySelectorAll('.radio-opt').forEach(e=>e.classList.remove('sel'));
+  document.getElementById('successCard').classList.remove('active');
+  document.getElementById('navRow').style.display = 'flex';
+  document.getElementById('btnNext').textContent = 'Siguiente →';
+  document.getElementById('btnNext').disabled = false;
+  showStep(1);
+}
+
+// ── WORKERS ──
+function renderWorkerGrid() {
+  const g = document.getElementById('workerGrid');
+  if (!workers.length) {
+    g.innerHTML = '<div style="grid-column:1/-1;font-size:0.82rem;color:#5f6368;padding:8px 0;">Ve a "Equipo" y añade trabajadores primero.</div>';
+    return;
+  }
+  g.innerHTML = workers.map(w=>`
+    <div class="w-opt ${String(sel.wId)===String(w.id)?'sel':''}" onclick="selectWorker(${w.id},'${w.nombre.replace(/'/g,"\\'")}',this)">
+      <span class="w-emoji">👤</span>
+      <div class="w-name">${w.nombre}</div>
+    </div>
+  `).join('');
+}
+
+function selectWorker(id, name, el) {
+  sel.wId = id; sel.wName = name;
+  document.querySelectorAll('.w-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function addWorker() {
+  const n = document.getElementById('wInput').value.trim();
+  if (!n) { toast('⚠️ Escribe un nombre'); return; }
+  if (workers.find(w=>w.nombre.toLowerCase()===n.toLowerCase())) { toast('⚠️ Ya existe'); return; }
+  workers.push({id:Date.now(), nombre:n});
+  saveWorkers(); renderTeam(); renderWorkerGrid();
+  document.getElementById('wInput').value = '';
+  toast('✅ Añadido: '+n);
+}
+
+function delWorker(id) {
+  if (!confirm('¿Eliminar este trabajador?')) return;
+  workers = workers.filter(w=>w.id!==id);
+  saveWorkers(); renderTeam(); renderWorkerGrid(); toast('🗑 Eliminado');
+}
+
+function renderTeam() {
+  const list = document.getElementById('teamList');
+  if (!workers.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:#5f6368;font-size:0.875rem;">Sin trabajadores todavía.</div>';
+    return;
+  }
+  list.innerHTML = workers.map(w=>`
+    <div class="tm-row">
+      <div class="tm-av">${initials(w.nombre)}</div>
+      <div class="tm-name">${w.nombre}</div>
+      <button class="tm-del" onclick="delWorker(${w.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('fProv').addEventListener('keydown', e=>{if(e.key==='Enter')nextStep();});
+document.getElementById('fTotal').addEventListener('keydown', e=>{if(e.key==='Enter')nextStep();});
+document.getElementById('wInput').addEventListener('keydown', e=>{if(e.key==='Enter')addWorker();});
+
+renderWorkerGrid(); renderTeam(); showStep(1);
+</script>
+</body>
+</html>
